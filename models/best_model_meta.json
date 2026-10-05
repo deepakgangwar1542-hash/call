@@ -1,0 +1,24 @@
+{
+  "model_version": "HistGradientBoosting-202610041832",
+  "model": "HistGradientBoosting",
+  "features": [
+    "road_type",
+    "speed_limit",
+    "weather",
+    "light_condition",
+    "junction_detail"
+  ],
+  "K": 300,
+  "threshold": 0.37783543904099526,
+  "metrics": {
+    "precision_at_k": 0.39,
+    "roc_auc": 0.5927716664095405,
+    "pr_auc": 0.302596529677471,
+    "ci95": [
+      0.32666666666666666,
+      0.4417499999999999
+    ]
+  },
+  "level1_precision_at_k": 0.31,
+  "base_rate": 0.24006510240065101
+}
