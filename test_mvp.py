@@ -59,6 +59,50 @@ def test_fallback_verdict_is_unscored():
     assert "UNSCORED" in card and "baseline estimate" in card.casefold()
     assert "LOW RISK" not in card
 
+
+def test_tie_averaged_precision_is_deterministic_and_bounded():
+    from step3_train_eval import average_precision_at_k
+    y, scores = [1, 0, 1, 0, 0], [.5, .5, .5, .2, .2]
+    first = average_precision_at_k(y, scores, 3)
+    assert first == average_precision_at_k(y, scores, 3)
+    assert 0 <= first[0] <= 1 and first[1] >= 0
+
+
+def test_group_baselines_are_fold_local_and_fallback_for_unseen_group():
+    import pandas as pd
+    from step3_train_eval import fit_level1, fit_level15, level1_scores, level15_scores
+    train = pd.DataFrame({"speed_limit": [30, 30], "road_type": ["A", "A"], "light_condition": ["Daylight", "Daylight"]})
+    test = pd.DataFrame({"speed_limit": [70], "road_type": ["Never seen"], "light_condition": ["Darkness"]})
+    l1, l15 = fit_level1(train, [1, 0]), fit_level15(train, [1, 0])
+    assert 0 <= level1_scores(test, l1)[0] <= 1
+    assert 0 <= level15_scores(test, l15)[0] <= 1
+
+
+def test_final_test_indices_do_not_overlap_development():
+    import pandas as pd
+    from step3_train_eval import final_split_indices
+    dev, final = final_split_indices(pd.Series([0, 1] * 20))
+    assert not set(dev).intersection(final)
+
+
+def test_saved_phase1_artifact_contract():
+    import json
+    with open(common.META_PATH, encoding="utf-8") as f:
+        meta = json.load(f)
+    required = {"model_version", "model", "features", "K", "threshold", "metrics", "level1_precision_at_k", "base_rate", "flag_rate", "data_variant", "eval_protocol"}
+    assert required.issubset(meta)
+    result = predict_call(OK)
+    assert result["is_estimate"] is False and result["risk_score"] is not None
+
+
+def test_paired_bootstrap_identical_scores_includes_zero():
+    from step3_train_eval import bootstrap_results
+    y = [0, 1] * 30
+    scores = [.2, .8] * 30
+    _, paired, _ = bootstrap_results(y, {"Level0_always_Slight": [0] * 60, "Level1_speed_limit_rate": scores, "Level1_5_smoothed_interaction_rate": scores, "model": scores}, "model", k=10, n=50)
+    assert abs(paired.iloc[0].mean_difference) < 1e-12
+    assert paired.iloc[0].ci_low <= 0 <= paired.iloc[0].ci_high
+
 if __name__ == "__main__":
     for n, f in list(globals().items()):
         if n.startswith("test_") and callable(f): f(); print("PASS", n)

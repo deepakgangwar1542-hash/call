@@ -1,6 +1,12 @@
-"""STEP 4+5+6: Cleaning, target variable, 5 features -> data/processed/clean_2023.csv"""
+"""Clean STATS19 2023 data for the Phase 1 evaluation protocol."""
+import argparse
 import pandas as pd
 from common import *
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--include-after-sep17", action="store_true",
+                    help="also retain records dated on/after 17 September 2023")
+args = parser.parse_args()
 
 df = load_raw()
 n0 = len(df)
@@ -38,15 +44,19 @@ print(f"Invalid/missing speed_limit rows dropped: {bad.sum()}")
 out = out[~bad].copy()
 out["speed_limit"] = out["speed_limit"].astype(int)
 
-# --- 17-Sep-2023 speed-limit recording issue: flag, aur default me inhe train/eval se hata do ---
+# --- 17-Sep-2023 speed-limit recording issue: retain a flag for sensitivity analysis ---
 out["after_sep17"] = out["date"] >= "2023-09-17"
 print("Rows after 17-Sep-2023 (flagged):", int(out["after_sep17"].sum()))
-EXCLUDE_AFTER_SEP17 = True   # False karke compare bhi kar sakte ho (sensitivity check)
-if EXCLUDE_AFTER_SEP17:
+for label, mask in (("Pre-17-Sep", ~out["after_sep17"]), ("On/after 17-Sep", out["after_sep17"])):
+    subset = out.loc[mask]
+    print(f"{label}: n={len(subset):,} | Serious/Fatal share={subset['target'].mean():.3f}")
+
+if not args.include_after_sep17:
     out = out[~out["after_sep17"]].copy()
 
 out = out.reset_index(drop=True)   # duplicate rows (same conditions) legit hain, drop mat karo
 CLEAN_CSV.parent.mkdir(parents=True, exist_ok=True)
-out.drop(columns=["date"]).to_csv(CLEAN_CSV, index=False)
+output_path = CLEAN_CSV.with_name("clean_2023_all.csv") if args.include_after_sep17 else CLEAN_CSV
+out.drop(columns=["date"]).to_csv(output_path, index=False)
 print(f"Rows: {n0} -> {len(out)} | Serious/Fatal share: {out['target'].mean():.3f}")
-print("Saved:", CLEAN_CSV)
+print("Saved:", output_path)
