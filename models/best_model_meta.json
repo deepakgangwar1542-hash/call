@@ -1,5 +1,5 @@
 {
-  "model_version": "RandomForest-phase1-202611171540",
+  "model_version": "RandomForest-phase1-202611171549",
   "model": "RandomForest",
   "features": [
     "road_type",
@@ -9,7 +9,7 @@
     "junction_detail"
   ],
   "K": 300,
-  "threshold": 0.6602721510811347,
+  "threshold": 0.6602721510811348,
   "flag_rate": 0.020344500203445002,
   "metrics": {
     "candidate": "RandomForest",
@@ -39,7 +39,7 @@
     "precision_at_k": 0.3825,
     "P@300_ci_low": 0.33,
     "P@300_ci_high": 0.44,
-    "threshold": 0.6602721510811347,
+    "threshold": 0.6602721510811348,
     "flag_rate_target": 0.020344500203445002,
     "flag_rate_actual": 0.005696460056964601,
     "high_precision": 0.42857142857142855,
